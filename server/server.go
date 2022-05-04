@@ -12,16 +12,27 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type Server struct {
+	http              *http.Server
+	config            Config
+	distributedSystem System
+}
+
 type Config struct {
-	Port              int    `mapstructure:"PORT"  default:"8080"`
-	URLPrefix         string `mapstructure:"URL_PREFIX"  default:"/api"`
-	Domain            string `mapstructure:"DOMAIN"  default:"github.com/mungujn"`
-	CORSAllowedHost   string `mapstructure:"CORS_ALLOWED_HOST"  default:"*"`
+	Port            int    `mapstructure:"PORT"  default:"8080"`
+	URLPrefix       string `mapstructure:"URL_PREFIX"  default:"/api"`
+	Domain          string `mapstructure:"DOMAIN"  default:"github.com/mungujn"`
+	CORSAllowedHost string `mapstructure:"CORS_ALLOWED_HOST"  default:"*"`
+}
+
+type System interface {
+	GetFile(ctx context.Context, path string) ([]byte, string, error)
 }
 
 // New creates a new server
 func New(
 	cfg Config,
+	distributedSystem System,
 ) (*Server, error) {
 	// build http server
 	httpSrv := http.Server{
@@ -29,15 +40,10 @@ func New(
 	}
 
 	// build Server
-	srv := Server{config: cfg}
+	srv := Server{config: cfg, distributedSystem: distributedSystem}
 
 	srv.setupHTTP(&httpSrv)
 	return &srv, nil
-}
-
-type Server struct {
-	http   *http.Server
-	config Config
 }
 
 // setupHTTP sets up the http server
@@ -58,15 +64,21 @@ func (s *Server) setupHTTP(srv *http.Server) {
 // GetRouter returns a mux router
 func (s *Server) GetRouter() *mux.Router {
 	r := mux.NewRouter()
-
-	r.Handle("/files", http.HandlerFunc(s.GetFile)).Methods(http.MethodGet)
-
+	r.HandleFunc("/{path:.*}", s.GetFile).Methods(http.MethodGet)
 	return r
 }
 
 // GetFile returns a file
 func (s *Server) GetFile(w http.ResponseWriter, r *http.Request) {
-	SendEmptyResponse(w, http.StatusOK)
+	path := mux.Vars(r)["path"]
+	ctx := r.Context()
+	contents, fileType, err := s.distributedSystem.GetFile(ctx, path)
+	if err != nil {
+		SendResponse(w, http.StatusOK, plainText, []byte(err.Error()))
+	} else {
+		SendResponse(w, http.StatusOK, fileType, contents)
+	}
+
 }
 
 // Run runs the web server

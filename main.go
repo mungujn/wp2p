@@ -12,6 +12,7 @@ import (
 
 	"github.com/mungujn/web-exp/config"
 	serverHTTP "github.com/mungujn/web-exp/server"
+	"github.com/mungujn/web-exp/system"
 )
 
 // main is the entry point of the application
@@ -31,9 +32,16 @@ func main() { // nolint:funlen,gocyclo
 	ctx, cancel := context.WithCancel(context.Background())
 	setupGracefulShutdown(cancel)
 
+	// init distributed system
+	sys, err := system.New(ctx, cfg)
+	if err != nil {
+		log.WithError(err).Fatal("system init error")
+	}
+
 	// initializing http server
 	httpSrv, err := serverHTTP.New(
 		cfg.HTTPServerCfg,
+		sys,
 	)
 	if err != nil {
 		log.WithError(err).Fatal("http server init")

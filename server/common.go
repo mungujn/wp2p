@@ -5,17 +5,12 @@ import (
 )
 
 const (
-	contentTypeJSON = "application/json;charset=utf-8"
+	plainText  = "text/plain"
 )
 
-func SendEmptyResponse(w http.ResponseWriter, statusCode int) {
-	w.Header().Set("Content-Type", contentTypeJSON)
+// SendResponse - sends a response
+func SendResponse(w http.ResponseWriter, statusCode int, responseType string, response []byte) {
+	w.Header().Set("Content-Type", responseType)
 	w.WriteHeader(statusCode)
-}
-
-// SendRawResponse - common method for writing any raw ([]byte) response.
-func SendRawResponse(w http.ResponseWriter, statusCode int, binBody []byte) {
-	w.Header().Set("Content-Type", contentTypeJSON)
-	w.WriteHeader(statusCode)
-	_, _ = w.Write(binBody)
+	_, _ = w.Write(response)
 }

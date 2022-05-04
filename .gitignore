@@ -13,6 +13,7 @@ reports
 
 # Builds
 build/bin/*
+__debug_bin
 
 # Binaries
 *.exe
