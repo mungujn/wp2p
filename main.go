@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/mungujn/web-exp/config"
+	"github.com/mungujn/web-exp/local"
 	serverHTTP "github.com/mungujn/web-exp/server"
 	"github.com/mungujn/web-exp/system"
 )
@@ -32,19 +33,22 @@ func main() { // nolint:funlen,gocyclo
 	ctx, cancel := context.WithCancel(context.Background())
 	setupGracefulShutdown(cancel)
 
+	// init distributed capabilites provider
+	provider := local.New(cfg.DistributedSystemConfig.LocalRootFolder)
+
 	// init distributed system
-	sys, err := system.New(ctx, cfg)
+	sys, err := system.New(ctx, cfg.DistributedSystemConfig, provider)
 	if err != nil {
 		log.WithError(err).Fatal("system init error")
 	}
 
-	// initializing http server
+	// init http server
 	httpSrv, err := serverHTTP.New(
 		cfg.HTTPServerCfg,
 		sys,
 	)
 	if err != nil {
-		log.WithError(err).Fatal("http server init")
+		log.WithError(err).Error("http server init error, http web server will not be available")
 	}
 
 	var wg = &sync.WaitGroup{}

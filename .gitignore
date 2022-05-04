@@ -5,6 +5,7 @@
 src/go.sum
 go.sum
 source.env
+test_folder
 
 # osx artifacts
 .DS_Store

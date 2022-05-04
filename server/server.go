@@ -12,12 +12,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Server is the http server
 type Server struct {
 	http              *http.Server
 	config            Config
 	distributedSystem System
 }
 
+// Config houses all the configurations for the web server
 type Config struct {
 	Port            int    `mapstructure:"PORT"  default:"8080"`
 	URLPrefix       string `mapstructure:"URL_PREFIX"  default:"/api"`
@@ -25,6 +27,7 @@ type Config struct {
 	CORSAllowedHost string `mapstructure:"CORS_ALLOWED_HOST"  default:"*"`
 }
 
+// System specifies the interface that applications main service providers must provide
 type System interface {
 	GetFile(ctx context.Context, path string) ([]byte, string, error)
 }
