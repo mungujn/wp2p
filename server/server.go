@@ -29,7 +29,7 @@ type Config struct {
 
 // System specifies the interface that applications main service providers must provide
 type System interface {
-	GetFile(ctx context.Context, path string) ([]byte, string, error)
+	GetFile(ctx context.Context, path string) ([]byte, error)
 }
 
 // New creates a new server
@@ -75,11 +75,11 @@ func (s *Server) GetRouter() *mux.Router {
 func (s *Server) GetFile(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	ctx := r.Context()
-	contents, fileType, err := s.distributedSystem.GetFile(ctx, path)
+	contents, err := s.distributedSystem.GetFile(ctx, path)
 	if err != nil {
 		SendResponse(w, http.StatusOK, plainText, []byte(err.Error()))
 	} else {
-		SendResponse(w, http.StatusOK, fileType, contents)
+		SendResponse(w, http.StatusOK, http.DetectContentType(contents), contents)
 	}
 
 }
