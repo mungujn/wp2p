@@ -29,7 +29,8 @@ type Config struct {
 
 // System specifies the interface that applications main service providers must provide
 type System interface {
-	GetFile(ctx context.Context, path string) ([]byte, error)
+	GetFile(ctx context.Context, path string) ([]byte, string, error)
+	GetOnlineNodes(ctx context.Context) ([]string, error)
 }
 
 // New creates a new server
@@ -75,16 +76,19 @@ func (s *Server) GetRouter() *mux.Router {
 func (s *Server) GetFile(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	ctx := r.Context()
-	contents, err := s.distributedSystem.GetFile(ctx, path)
+	contents, contentType, err := s.distributedSystem.GetFile(ctx, path)
 	if err != nil {
 		SendResponse(w, http.StatusOK, plainText, []byte(err.Error()))
 	} else {
-		SendResponse(w, http.StatusOK, http.DetectContentType(contents), contents)
+		if contentType == "" {
+			contentType = http.DetectContentType(contents)
+		}
+		SendResponse(w, http.StatusOK, contentType, contents)
 	}
 
 }
 
-// Run runs the web server
+// Run the web server
 func (s *Server) Run(ctx context.Context, wg *sync.WaitGroup) {
 	wg.Add(1)
 	log.Info("http service: begin run")

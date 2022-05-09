@@ -4,8 +4,6 @@ import (
 	"context"
 	"io/ioutil"
 
-	"github.com/mungujn/web-exp/system"
-
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,10 +18,6 @@ func New(rootFolder string) *LocalFilesystem {
 	}
 }
 
-func (lfs *LocalFilesystem) SetUp(ctx context.Context, cfg system.Config) error {
-	return nil
-}
-
 func (lfs *LocalFilesystem) GetFile(ctx context.Context, username, path string) ([]byte, error) {
 	var fullPath string
 	if username == "" {
@@ -33,4 +27,8 @@ func (lfs *LocalFilesystem) GetFile(ctx context.Context, username, path string) 
 	}
 	log.Debug("reading file: ", fullPath)
 	return ioutil.ReadFile(fullPath)
+}
+
+func (lfs *LocalFilesystem) GetOnlineNodes(ctx context.Context) ([]string, error) {
+	return []string{"user_2", "user_3"}, nil
 }

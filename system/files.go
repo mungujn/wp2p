@@ -2,7 +2,6 @@ package system
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -10,38 +9,50 @@ import (
 )
 
 // GetFile returns file content
-func (s *System) GetFile(ctx context.Context, path string) ([]byte, error) {
+func (s *System) GetFile(ctx context.Context, path string) ([]byte, string, error) {
 	log.Debug("GetFile: ", path)
+	var username string
+	var filename string
 	parts := strings.Split(path, "/")
-	if len(parts) != 2 {
-		err := fmt.Errorf("invalid path: %s", path)
-		log.Error(err)
-		return nil, err
+	noParts := len(parts)
+
+	if noParts == 1 && parts[0] == "" {
+		log.Info("fetching root path /")
+		onlineNodes, err := s.GetOnlineNodes(ctx)
+		if err != nil {
+			err = fmt.Errorf("failed to get online nodes: %s", err)
+			log.Error(err)
+			return nil, "", err
+		}
+		return s.renderedHomePage(onlineNodes)
 	}
-	username := parts[0]
-	filename := parts[1]
+
+	if noParts == 1 && parts[0] != "" {
+		log.Debug("no username provided, defaulting to current user")
+		username = s.cfg.Username
+		filename = parts[0]
+	} else {
+		username = parts[0]
+		filename = strings.Join(parts[1:], "/")
+	}
+
 	str := fmt.Sprintf("reading file %s of user %s", filename, username)
 	log.Info(str)
 
-	parts = strings.Split(filename, ".")
-	lenParts := len(parts)
-	if lenParts != 2 {
-		if lenParts == 1 {
-			filename = parts[0] + ".html"
-		} else {
-			errStr := fmt.Sprintf("invalid filename: %s, no extension provided", filename)
-			err := errors.New(errStr)
-			log.Error(err)
-			return []byte(errStr), err
-		}
+	if username == s.cfg.Username {
+		username = ""
 	}
 
 	file, err := s.fileProvider.GetFile(ctx, username, filename)
 	if err != nil {
 		log.Error(err)
-		return []byte(err.Error()), err
+		return []byte(err.Error()), plainTextContent, err
 	}
-	
+
 	log.Info("file read")
-	return file, nil
+	return file, inferContentType(filename), nil
+}
+
+func (s *System) GetOnlineNodes(ctx context.Context) ([]string, error) {
+	return s.fileProvider.GetOnlineNodes(ctx)
 }
