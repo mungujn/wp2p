@@ -22,7 +22,7 @@ func (s *System) GetFile(ctx context.Context, path string) ([]byte, string, erro
 		if err != nil {
 			err = fmt.Errorf("failed to get online nodes: %s", err)
 			log.Error(err)
-			return nil, "", err
+			return []byte(err.Error()), plainTextContent, err
 		}
 		return s.renderedHomePage(onlineNodes)
 	}
