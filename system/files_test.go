@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 	"testing"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_GetFile(t *testing.T) {
+func getTestSystem(t *testing.T) (*System, context.Context) {
 	// prep test config
 	ctx := context.Background()
 	cfg := Config{
@@ -26,7 +27,14 @@ func Test_GetFile(t *testing.T) {
 	if err != nil {
 		assert.Fail(t, err.Error())
 	}
+	return sys, ctx
+}
 
+func Test_GetFile(t *testing.T) {
+	// prep
+	sys, ctx := getTestSystem(t)
+
+	// prep test cases
 	cases := []struct {
 		Name                string
 		Path                string
@@ -38,6 +46,12 @@ func Test_GetFile(t *testing.T) {
 			Path:                "",
 			ExpectedContentType: htmlContent,
 			ExpectedBytes:       getFile("test_data/expected/home.html"),
+		},
+		{
+			Name:                "current user page",
+			Path:                "me",
+			ExpectedContentType: htmlContent,
+			ExpectedBytes:       getFile("test_data/expected/file.html"),
 		},
 		{
 			Name:                "html content type",
@@ -71,12 +85,43 @@ func Test_GetFile(t *testing.T) {
 		},
 	}
 
+	// run tests
 	for _, testCase := range cases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			log.Debug("testing file case: ", testCase.Path)
 			data, contentType, err := sys.GetFile(ctx, testCase.Path)
 			// writeFile(testCase.Name, data)
 			assert.Nil(t, err)
+			assert.Equal(t, testCase.ExpectedContentType, contentType)
+			assert.Equal(t, testCase.ExpectedBytes, data)
+		})
+	}
+}
+
+func Test_GetFile_error(t *testing.T) {
+	// prep
+	sys, ctx := getTestSystem(t)
+
+	cases := []struct {
+		Name                string
+		Path                string
+		ExpectedContentType string
+		ExpectedBytes       []byte
+	}{
+		{
+			Name:                "file not found",
+			Path:                "file-2.js",
+			ExpectedContentType: plainTextContent,
+			ExpectedBytes:       []byte("open test_data/server_root/file-2.js: no such file or directory"),
+		},
+	}
+
+	for _, testCase := range cases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			log.Debug("testing file case: ", testCase.Path)
+			data, contentType, err := sys.GetFile(ctx, testCase.Path)
+			// writeFile(testCase.Name, data)
+			assert.Error(t, errors.New("open test_data/server_root/file-2.js: no such file or directory"), err)
 			assert.Equal(t, testCase.ExpectedContentType, contentType)
 			assert.Equal(t, testCase.ExpectedBytes, data)
 		})

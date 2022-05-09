@@ -31,6 +31,11 @@ func (s *System) GetFile(ctx context.Context, path string) ([]byte, string, erro
 		log.Debug("no username provided, defaulting to current user")
 		username = s.cfg.Username
 		filename = parts[0]
+		filenameParts := strings.Split(filename, ".")
+		if len(filenameParts) == 1 {
+			log.Debug("no file extension provided, defaulting to current user index.html")
+			filename = "index.html"
+		}
 	} else {
 		username = parts[0]
 		filename = strings.Join(parts[1:], "/")
