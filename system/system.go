@@ -13,7 +13,7 @@ type Config struct {
 	LocalNodePort      int    `mapstructure:"LOCAL_NODE_PORT"  default:"4040"`
 	NetworkName        string `mapstructure:"NETWORK_NAME"  default:"local"`
 	ProtocolId         string `mapstructure:"PROTOCOL_ID"  default:"localfiles"`
-	ProtocolVersion    string    `mapstructure:"PROTOCOL_VERSION"  default:"0.1"`
+	ProtocolVersion    string `mapstructure:"PROTOCOL_VERSION"  default:"0.1"`
 }
 
 // FileProvider specifies the interface that file service providers must meet
