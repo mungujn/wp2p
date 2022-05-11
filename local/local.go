@@ -18,6 +18,10 @@ func New(rootFolder string) *LocalFilesystem {
 	}
 }
 
+func (lfs *LocalFilesystem) StartHost(ctx context.Context) error {
+	return nil
+}
+
 func (lfs *LocalFilesystem) GetFile(ctx context.Context, username, path string) ([]byte, error) {
 	var fullPath string
 	if username == "" {

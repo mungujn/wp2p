@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"strings"
@@ -11,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/mungujn/web-exp/config"
-	"github.com/mungujn/web-exp/local"
+	"github.com/mungujn/web-exp/remote"
 	serverHTTP "github.com/mungujn/web-exp/server"
 	"github.com/mungujn/web-exp/system"
 )
@@ -34,17 +35,26 @@ func main() { // nolint:funlen,gocyclo
 	setupGracefulShutdown(cancel)
 
 	// init distributed capabilites provider
-	provider := local.New(cfg.DistributedSystemConfig.LocalRootFolder)
+	dcfg := cfg.DistributedSystem
+	provider := remote.New(
+		dcfg.Username,
+		dcfg.LocalRootFolder,
+		dcfg.LocalNodeHost,
+		dcfg.LocalNodePort,
+		dcfg.NetworkName,
+		fmt.Sprintf("/%s/%s", dcfg.ProtocolId, dcfg.ProtocolVersion),
+	)
+	err = provider.StartHost(ctx)
 
 	// init distributed system
-	sys, err := system.New(ctx, cfg.DistributedSystemConfig, provider)
+	sys, err := system.New(ctx, dcfg, provider)
 	if err != nil {
 		log.WithError(err).Fatal("system init error")
 	}
 
 	// init http server
 	httpSrv, err := serverHTTP.New(
-		cfg.HTTPServerCfg,
+		cfg.HTTPServer,
 		sys,
 	)
 	if err != nil {

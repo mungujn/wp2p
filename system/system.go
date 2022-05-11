@@ -6,13 +6,19 @@ import (
 
 // Config houses all the configurations for the distributed system
 type Config struct {
-	Username        string `mapstructure:"USERNAME"  default:"me"`
-	LocalRootFolder string `mapstructure:"LOCAL_ROOT_FOLDER"  default:"test_folder"`
-	LocalServerPort int    `mapstructure:"LOCAL_SERVER_PORT"  default:"8080"`
+	Username           string `mapstructure:"USERNAME"  default:"me"`
+	LocalRootFolder    string `mapstructure:"LOCAL_ROOT_FOLDER"  default:"test_folder"`
+	LocalWebServerPort int    `mapstructure:"LOCAL_WEB_SERVER_PORT"  default:"8080"`
+	LocalNodeHost      string `mapstructure:"LOCAL_NODE_HOST"  default:"0.0.0.0"`
+	LocalNodePort      int    `mapstructure:"LOCAL_NODE_PORT"  default:"4040"`
+	NetworkName        string `mapstructure:"NETWORK_NAME"  default:"local"`
+	ProtocolId         string `mapstructure:"PROTOCOL_ID"  default:"localfiles"`
+	ProtocolVersion    string    `mapstructure:"PROTOCOL_VERSION"  default:"0.1"`
 }
 
 // FileProvider specifies the interface that file service providers must meet
 type FileProvider interface {
+	StartHost(ctx context.Context) error
 	GetFile(ctx context.Context, username, filename string) ([]byte, error)
 	GetOnlineNodes(ctx context.Context) ([]string, error)
 }
