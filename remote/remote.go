@@ -3,7 +3,9 @@ package remote
 import (
 	"context"
 	"errors"
+	"io"
 	"io/ioutil"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +33,7 @@ const (
 	remoteError    = "e"
 )
 
+// RemoteFilesystem is a remote filesystem host built around libp2p
 type RemoteFilesystem struct {
 	iam              string
 	rootFolder       string
@@ -45,6 +48,7 @@ type RemoteFilesystem struct {
 	usernames        []string
 }
 
+// New creates a new RemoteFilesystem host using libp2p
 func New(iam, rootfloder, listenHost string, listenPort int, networkName, protocolId string) *RemoteFilesystem {
 	log.Debugf("setting up the remote node system using host %s and port %d", listenHost, listenPort)
 	return &RemoteFilesystem{
@@ -60,6 +64,7 @@ func New(iam, rootfloder, listenHost string, listenPort int, networkName, protoc
 	}
 }
 
+// StartHost starts up the host
 func (rfs *RemoteFilesystem) StartHost(ctx context.Context) error {
 	log.Infof("will listen on: %s with port: %d\n", rfs.listenHost, rfs.listenPort)
 
@@ -104,6 +109,7 @@ func (rfs *RemoteFilesystem) StartHost(ctx context.Context) error {
 	return nil
 }
 
+// GetFile returns a file from any peer, including the current one
 func (rfs *RemoteFilesystem) GetFile(ctx context.Context, username, path string) ([]byte, error) {
 	var fullPath string
 	if username == "" {
@@ -150,10 +156,12 @@ func (rfs *RemoteFilesystem) GetFile(ctx context.Context, username, path string)
 	}
 }
 
+// GetOnlineNodes returns usernames of all online nodes
 func (rfs *RemoteFilesystem) GetOnlineNodes(ctx context.Context) ([]string, error) {
 	return rfs.usernames, nil
 }
 
+// handshakePeer initiates a handshake with a peer for username exchange
 func (rfs *RemoteFilesystem) handshakePeer(peer peer.AddrInfo) {
 	peerId := peer.ID.Pretty()
 	log.Info("handshake peer: ", peerId)
@@ -184,6 +192,7 @@ func (rfs *RemoteFilesystem) handshakePeer(peer peer.AddrInfo) {
 	}
 }
 
+// handleStream is called by libp2p when a stream with the protocol ID is opened
 func (rfs *RemoteFilesystem) handleStream(stream network.Stream) {
 	log.Info("got a new connection stream")
 
@@ -204,27 +213,36 @@ func (rfs *RemoteFilesystem) handleStream(stream network.Stream) {
 		log.Infof("connected to peer: %s with username %s", peerId, sender)
 	case remoteFilepath:
 		path := string(data)
+		path = strings.Replace(path, "\n", "", -1)
 		log.Infof("user: %s is requesting %s", sender, path)
-		responseData, err := ioutil.ReadFile(path)
+		responseData, err := rfs.GetFile(context.TODO(), "", path)
 		if err != nil {
 			errStr := fmt.Sprintf("error reading file: %s", err)
+			log.Error(errStr)
 			err = rfs.writeData(rw, []byte(errStr), remoteError)
 		} else {
+			log.Infof("file %s read successfully", path)
 			err = rfs.writeData(rw, responseData, remoteData)
 		}
 		if err != nil {
 			log.Error("error writing response data: ", err)
+		} else {
+			log.Infof("sent response to user %s", sender)
 		}
 	case remoteData:
 		log.Error("getting remote data from: ", sender)
+	case remoteError:
+		log.Error("getting remote error data from: ", sender)
 	default:
 		log.Error("unknown data type: ", getting)
 	}
-	// 'stream' will stay open until you close it (or the other side closes it).
+	// 'stream' will stay open until closed (or the other side closes it).
 }
 
+// writeData writes a message to a stream
 func (rfs *RemoteFilesystem) writeData(rw *bufio.ReadWriter, data []byte, sending string) error {
-	_, err := rw.WriteString(fmt.Sprintf("%s:%s\n", rfs.iam, sending))
+	sendingCount := len(data)
+	_, err := rw.WriteString(fmt.Sprintf("%s:%s:%d\n", rfs.iam, sending, sendingCount))
 	if err != nil {
 		log.Error("error writing identity to buffer: ", err)
 		return err
@@ -239,11 +257,6 @@ func (rfs *RemoteFilesystem) writeData(rw *bufio.ReadWriter, data []byte, sendin
 		log.Error("error writing data to buffer: ", err)
 		return err
 	}
-	_, err = rw.Write([]byte{'\n'})
-	if err != nil {
-		log.Error("error writing data to buffer: ", err)
-		return err
-	}
 	err = rw.Flush()
 	if err != nil {
 		log.Error("error flushing data buffer: ", err)
@@ -252,6 +265,7 @@ func (rfs *RemoteFilesystem) writeData(rw *bufio.ReadWriter, data []byte, sendin
 	return nil
 }
 
+// readData reads data from a stream
 func readData(rw *bufio.ReadWriter) ([]byte, string, string, error) {
 	theyAre, err := rw.ReadString('\n')
 	if err != nil {
@@ -263,17 +277,31 @@ func readData(rw *bufio.ReadWriter) ([]byte, string, string, error) {
 
 	if theyAre != "" {
 		parts := strings.Split(theyAre, ":")
-		if len(parts) != 2 {
-			err = errors.New("invalid handshake message")
+		if len(parts) != 3 {
+			return nil, "", "", errors.New("invalid handshake message")
 		}
 		clientUsername := parts[0]
 		sending := parts[1]
-		sending = strings.Replace(sending, "\n", "", -1)
+		countStr := parts[2]
+		countStr = strings.Replace(countStr, "\n", "", -1)
+		sendingCount, err := strconv.Atoi(countStr)
+		if err != nil {
+			return nil, "", "", errors.New("invalid handshake message, invalid byte count")
+		}
 
-		data, err := rw.ReadBytes('\n')
-		if err == nil {
-			// log.Debugf("bytes received from client: %s %s %s", data, clientUsername, sending)
+		data := make([]byte, sendingCount)
+		count, err := rw.Read(data)
+		if err == io.EOF || err == nil {
+			if count != sendingCount {
+				return nil, "", "", fmt.Errorf(
+					"invalid read message, expected %d bytes, got %d", sendingCount, count,
+				)
+			}
+			log.Debugf("read %d bytes received from client", count)
 			return data, clientUsername, sending, nil
+		} else {
+			log.Error("error reading from buffer: ", err)
+			return nil, "", "", err
 		}
 	} else {
 		err = errors.New("client did not send identity")
@@ -282,6 +310,7 @@ func readData(rw *bufio.ReadWriter) ([]byte, string, string, error) {
 	return nil, "", "", err
 }
 
+// setUpGracefulHostStop sets up a graceful shutdown of the host
 func (rfs *RemoteFilesystem) setUpGracefulHostStop(ctx context.Context) error {
 	go func(host host.Host) {
 		<-ctx.Done()
