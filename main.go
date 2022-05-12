@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"strings"
@@ -36,14 +35,7 @@ func main() { // nolint:funlen,gocyclo
 
 	// init distributed capabilites provider
 	dcfg := cfg.DistributedSystem
-	provider := remote.New(
-		dcfg.Username,
-		dcfg.LocalRootFolder,
-		dcfg.LocalNodeHost,
-		dcfg.LocalNodePort,
-		dcfg.NetworkName,
-		fmt.Sprintf("/%s/%s", dcfg.ProtocolId, dcfg.ProtocolVersion),
-	)
+	provider := remote.New(dcfg)
 	err = provider.StartHost(ctx)
 	if err != nil {
 		log.WithError(err).Fatal("host init error")

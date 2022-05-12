@@ -9,13 +9,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/libp2p/go-libp2p-core/host"
+	libp2phost "github.com/libp2p/go-libp2p-core/host"
 
 	log "github.com/sirupsen/logrus"
 
 	"bufio"
 	"crypto/rand"
 	"fmt"
+
+	"github.com/mungujn/web-exp/system"
+
+	dht "github.com/libp2p/go-libp2p-kad-dht"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -35,32 +39,36 @@ const (
 
 // RemoteFilesystem is a remote filesystem host built around libp2p
 type RemoteFilesystem struct {
-	iam              string
-	rootFolder       string
-	listenHost       string
-	listenPort       int
-	networkName      string
-	protocolId       string
-	host             host.Host
-	hostId           string
-	peerIds          map[string]peer.AddrInfo
-	usernameToPeerId map[string]string
-	usernames        []string
+	iam                 string
+	rootFolder          string
+	listenHost          string
+	listenPort          int
+	networkName         string
+	protocolId          string
+	host                libp2phost.Host
+	hostId              string
+	peerIds             map[string]peer.AddrInfo
+	usernameToPeerId    map[string]string
+	usernames           []string
+	runGlobal           bool
+	customBootstrapPeer string
 }
 
 // New creates a new RemoteFilesystem host using libp2p
-func New(iam, rootfloder, listenHost string, listenPort int, networkName, protocolId string) *RemoteFilesystem {
-	log.Debugf("setting up the remote node system using host %s and port %d", listenHost, listenPort)
+func New(dcfg system.Config) *RemoteFilesystem {
+	log.Debugf("setting up the remote node system using host %s and port %d", dcfg.LocalNodeHost, dcfg.LocalNodePort)
 	return &RemoteFilesystem{
-		iam:              iam,
-		rootFolder:       rootfloder,
-		listenHost:       listenHost,
-		listenPort:       listenPort,
-		networkName:      networkName,
-		protocolId:       protocolId,
-		peerIds:          make(map[string]peer.AddrInfo),
-		usernameToPeerId: make(map[string]string),
-		usernames:        make([]string, 0),
+		iam:                 dcfg.Username,
+		rootFolder:          dcfg.LocalRootFolder,
+		listenHost:          dcfg.LocalNodeHost,
+		listenPort:          dcfg.LocalNodePort,
+		networkName:         dcfg.NetworkName,
+		protocolId:          fmt.Sprintf("/%s/%s", dcfg.ProtocolId, dcfg.ProtocolVersion),
+		runGlobal:           dcfg.RunGlobal,
+		customBootstrapPeer: dcfg.CustomBootstrapPeer,
+		peerIds:             make(map[string]peer.AddrInfo),
+		usernameToPeerId:    make(map[string]string),
+		usernames:           make([]string, 0),
 	}
 }
 
@@ -84,12 +92,20 @@ func (rfs *RemoteFilesystem) StartHost(ctx context.Context) error {
 		return err
 	}
 
+	var idht *dht.IpfsDHT
+	var host libp2phost.Host
+
 	// libp2p.New constructs a new libp2p Host.
 	// Other options can be added here.
-	host, err := libp2p.New(
-		libp2p.ListenAddrs(sourceMultiAddr),
-		libp2p.Identity(prvKey),
-	)
+	if rfs.runGlobal {
+		host, err = getGlobalHost(ctx, prvKey, sourceMultiAddr, idht)
+	} else {
+		host, err = libp2p.New(
+			libp2p.ListenAddrs(sourceMultiAddr),
+			libp2p.Identity(prvKey),
+		)
+	}
+
 	if err != nil {
 		log.Error("error creating host:", err)
 	}
@@ -105,6 +121,10 @@ func (rfs *RemoteFilesystem) StartHost(ctx context.Context) error {
 	log.Debug("this hosts peer ID Is: ", rfs.hostId)
 
 	rfs.initMDNS()
+
+	if rfs.runGlobal {
+		connectToPublicPeers(ctx, rfs.host, rfs.customBootstrapPeer)
+	}
 
 	return nil
 }
@@ -312,7 +332,7 @@ func readData(rw *bufio.ReadWriter) ([]byte, string, string, error) {
 
 // setUpGracefulHostStop sets up a graceful shutdown of the host
 func (rfs *RemoteFilesystem) setUpGracefulHostStop(ctx context.Context) error {
-	go func(host host.Host) {
+	go func(host libp2phost.Host) {
 		<-ctx.Done()
 		log.Error("Got Interrupt signal, stopping host")
 		host.Close()

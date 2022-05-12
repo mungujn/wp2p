@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"fmt"
-
 	"io/ioutil"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/mungujn/web-exp/system"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -21,29 +21,35 @@ func Test_GetFile(t *testing.T) {
 	protocolV := "0.1"
 
 	// prep host 1
+	dcfg1 := system.Config{
+		Username:        "host1",
+		LocalRootFolder: "test_data/host_1",
+		LocalNodeHost:   "0.0.0.0",
+		LocalNodePort:   4042,
+		NetworkName:     networkName,
+		ProtocolId:      protocolId,
+		ProtocolVersion: protocolV,
+		RunGlobal:       false,
+	}
 	h1Ctx, h1Cancel := context.WithCancel(context.Background())
-	host1 := New(
-		"host1",
-		"test_data/host_1",
-		"0.0.0.0",
-		4042,
-		networkName,
-		fmt.Sprintf("/%s/%s", protocolId, protocolV),
-	)
+	host1 := New(dcfg1)
 	err := host1.StartHost(h1Ctx)
 	assert.NoError(t, err)
 	defer h1Cancel()
 
 	// prep host 2
+	dcfg2 := system.Config{
+		Username:        "host2",
+		LocalRootFolder: "test_data/host_2",
+		LocalNodeHost:   "0.0.0.0",
+		LocalNodePort:   4043,
+		NetworkName:     networkName,
+		ProtocolId:      protocolId,
+		ProtocolVersion: protocolV,
+		RunGlobal:       false,
+	}
 	h2Ctx, h2Cancel := context.WithCancel(context.Background())
-	host2 := New(
-		"host2",
-		"test_data/host_2",
-		"0.0.0.0",
-		4043,
-		networkName,
-		fmt.Sprintf("/%s/%s", protocolId, protocolV),
-	)
+	host2 := New(dcfg2)
 	err = host2.StartHost(h2Ctx)
 	assert.NoError(t, err)
 	defer h2Cancel()

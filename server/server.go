@@ -56,7 +56,7 @@ func (s *Server) setupHTTP(srv *http.Server) {
 
 	srv.Handler = cors.New(cors.Options{
 		AllowedOrigins:     []string{s.config.CORSAllowedHost},
-		AllowedMethods:     []string{http.MethodGet, http.MethodPost, http.MethodDelete},
+		AllowedMethods:     []string{http.MethodGet},
 		AllowedHeaders:     []string{"*"},
 		AllowCredentials:   true,
 		OptionsPassthrough: false,
