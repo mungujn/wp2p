@@ -101,7 +101,7 @@ func (rfs *RemoteFilesystem) StartHost(ctx context.Context) error {
 	rfs.host.SetStreamHandler(protocol.ID(rfs.protocolId), rfs.handleStream)
 	rfs.hostId = host.ID().Pretty()
 
-	log.Debug("\nthis hosts Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", rfs.listenHost, rfs.listenPort, rfs.hostId)
+	log.Debugf("\nthis hosts Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", rfs.listenHost, rfs.listenPort, rfs.hostId)
 	log.Debug("this hosts peer ID Is: ", rfs.hostId)
 
 	rfs.initMDNS()
@@ -157,8 +157,8 @@ func (rfs *RemoteFilesystem) GetFile(ctx context.Context, username, path string)
 }
 
 // GetOnlineNodes returns usernames of all online nodes
-func (rfs *RemoteFilesystem) GetOnlineNodes(ctx context.Context) ([]string, error) {
-	return rfs.usernames, nil
+func (rfs *RemoteFilesystem) GetOnlineNodes() []string {
+	return rfs.usernames
 }
 
 // handshakePeer initiates a handshake with a peer for username exchange

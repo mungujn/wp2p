@@ -18,13 +18,7 @@ func (s *System) GetFile(ctx context.Context, path string) ([]byte, string, erro
 
 	if noParts == 1 && parts[0] == "" {
 		log.Info("fetching root path /")
-		onlineNodes, err := s.GetOnlineNodes(ctx)
-		if err != nil {
-			err = fmt.Errorf("failed to get online nodes: %s", err)
-			log.Error(err)
-			return []byte(err.Error()), plainTextContent, err
-		}
-		return s.renderedHomePage(onlineNodes)
+		return s.renderedHomePage(s.GetOnlineNodes())
 	}
 
 	if noParts == 1 && parts[0] != "" {
@@ -58,6 +52,6 @@ func (s *System) GetFile(ctx context.Context, path string) ([]byte, string, erro
 	return file, inferContentType(filename), nil
 }
 
-func (s *System) GetOnlineNodes(ctx context.Context) ([]string, error) {
-	return s.fileProvider.GetOnlineNodes(ctx)
+func (s *System) GetOnlineNodes() []string {
+	return s.fileProvider.GetOnlineNodes()
 }

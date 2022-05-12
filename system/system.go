@@ -20,7 +20,7 @@ type Config struct {
 type FileProvider interface {
 	StartHost(ctx context.Context) error
 	GetFile(ctx context.Context, username, filename string) ([]byte, error)
-	GetOnlineNodes(ctx context.Context) ([]string, error)
+	GetOnlineNodes() []string
 }
 
 // System is the main implementation of the applications logic

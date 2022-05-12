@@ -30,7 +30,7 @@ type Config struct {
 // System specifies the interface that applications main service providers must provide
 type System interface {
 	GetFile(ctx context.Context, path string) ([]byte, string, error)
-	GetOnlineNodes(ctx context.Context) ([]string, error)
+	GetOnlineNodes() []string
 }
 
 // New creates a new server

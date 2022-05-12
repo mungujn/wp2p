@@ -33,6 +33,6 @@ func (lfs *LocalFilesystem) GetFile(ctx context.Context, username, path string) 
 	return ioutil.ReadFile(fullPath)
 }
 
-func (lfs *LocalFilesystem) GetOnlineNodes(ctx context.Context) ([]string, error) {
-	return []string{"user_2", "user_3"}, nil
+func (lfs *LocalFilesystem) GetOnlineNodes() []string {
+	return []string{"user_2", "user_3"}
 }
