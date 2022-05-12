@@ -28,7 +28,7 @@ func main() { // nolint:funlen,gocyclo
 	// init logger
 	initLogger(cfg.LogLevel)
 
-	log.Info("Service starting...")
+	log.Info("service starting...")
 
 	// prepare main context
 	ctx, cancel := context.WithCancel(context.Background())
@@ -45,6 +45,9 @@ func main() { // nolint:funlen,gocyclo
 		fmt.Sprintf("/%s/%s", dcfg.ProtocolId, dcfg.ProtocolVersion),
 	)
 	err = provider.StartHost(ctx)
+	if err != nil {
+		log.WithError(err).Fatal("host init error")
+	}
 
 	// init distributed system
 	sys, err := system.New(ctx, dcfg, provider)
@@ -68,7 +71,7 @@ func main() { // nolint:funlen,gocyclo
 
 	// wait while services work
 	wg.Wait()
-	log.Info("Service stopped")
+	log.Info("service stopped")
 }
 
 // initLogger initializes logger

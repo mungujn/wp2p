@@ -18,7 +18,7 @@ func (s *System) renderOnlineNodes(nodes []string) string {
 		s.cfg.Username,
 	)
 	for _, node := range nodes {
-		nodesHtml += fmt.Sprintf(`<li><strong><a href="http://localhost:%d/%s">%s</a></strong></li>`,
+		nodesHtml += fmt.Sprintf(`<li><strong><a href="http://localhost:%d/%s/index.html">%s</a></strong></li>`,
 			s.cfg.LocalWebServerPort,
 			node,
 			node,
@@ -38,7 +38,7 @@ func renderHeader() string {
 		<title>Localhosts</title>
 	<head>
 	<body>
-		<p><strong>Online Nodes</strong></p>
+		<p><strong>Online Users</strong></p>
 	`
 }
 
