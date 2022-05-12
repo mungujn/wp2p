@@ -32,29 +32,31 @@ const (
 )
 
 type RemoteFilesystem struct {
-	iam         string
-	rootFolder  string
-	listenHost  string
-	listenPort  int
-	networkName string
-	protocolId  string
-	host        host.Host
-	hostId      string
-	peers       map[string]peer.AddrInfo
-	peerNames   []string
+	iam              string
+	rootFolder       string
+	listenHost       string
+	listenPort       int
+	networkName      string
+	protocolId       string
+	host             host.Host
+	hostId           string
+	peerIds          map[string]peer.AddrInfo
+	usernameToPeerId map[string]string
+	usernames        []string
 }
 
 func New(iam, rootfloder, listenHost string, listenPort int, networkName, protocolId string) *RemoteFilesystem {
 	log.Debugf("setting up the remote node system using host %s and port %d", listenHost, listenPort)
 	return &RemoteFilesystem{
-		iam:         iam,
-		rootFolder:  rootfloder,
-		listenHost:  listenHost,
-		listenPort:  listenPort,
-		networkName: networkName,
-		protocolId:  protocolId,
-		peers:       make(map[string]peer.AddrInfo),
-		peerNames:   make([]string, 0),
+		iam:              iam,
+		rootFolder:       rootfloder,
+		listenHost:       listenHost,
+		listenPort:       listenPort,
+		networkName:      networkName,
+		protocolId:       protocolId,
+		peerIds:          make(map[string]peer.AddrInfo),
+		usernameToPeerId: make(map[string]string),
+		usernames:        make([]string, 0),
 	}
 }
 
@@ -91,10 +93,11 @@ func (rfs *RemoteFilesystem) StartHost(ctx context.Context) error {
 
 	// Set a function as stream handler.
 	// This function is called when a peer initiates a connection and starts a stream with this peer.
-	host.SetStreamHandler(protocol.ID(rfs.protocolId), rfs.handleStream)
+	rfs.host.SetStreamHandler(protocol.ID(rfs.protocolId), rfs.handleStream)
 	rfs.hostId = host.ID().Pretty()
 
-	log.Info("\nthis hosts Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", rfs.listenHost, rfs.listenPort, rfs.hostId)
+	log.Debug("\nthis hosts Multiaddress Is: /ip4/%s/tcp/%v/p2p/%s\n", rfs.listenHost, rfs.listenPort, rfs.hostId)
+	log.Debug("this hosts peer ID Is: ", rfs.hostId)
 
 	rfs.initMDNS()
 
@@ -110,7 +113,11 @@ func (rfs *RemoteFilesystem) GetFile(ctx context.Context, username, path string)
 	} else {
 		log.Debugf("reading remote file %s from user %s ", path, username)
 
-		peer, exists := rfs.peers[username]
+		peerId, exists := rfs.usernameToPeerId[username]
+		if !exists {
+			return nil, fmt.Errorf("username %s is not assciated with a peer id", username)
+		}
+		peer, exists := rfs.peerIds[peerId]
 		if !exists {
 			return nil, fmt.Errorf("peer %s not known by current node", username)
 		}
@@ -144,11 +151,12 @@ func (rfs *RemoteFilesystem) GetFile(ctx context.Context, username, path string)
 }
 
 func (rfs *RemoteFilesystem) GetOnlineNodes(ctx context.Context) ([]string, error) {
-	return rfs.peerNames, nil
+	return rfs.usernames, nil
 }
 
 func (rfs *RemoteFilesystem) handshakePeer(peer peer.AddrInfo) {
-	log.Info("handshake peer: ", peer.ID)
+	peerId := peer.ID.Pretty()
+	log.Info("handshake peer: ", peerId)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -162,30 +170,18 @@ func (rfs *RemoteFilesystem) handshakePeer(peer peer.AddrInfo) {
 	if err != nil {
 		log.Error("stream open failed: ", err)
 	} else {
+		rfs.peerIds[peerId] = peer
+		log.Infof("peer %s now known by current node", peerId)
+
 		rw := bufio.NewReadWriter(bufio.NewReader(stream), bufio.NewWriter(stream))
 
-		err = rfs.writeData(rw, []byte(handshake), handshake)
+		err = rfs.writeData(rw, []byte(rfs.hostId), handshake)
 		if err != nil {
 			log.Error("error writing handshake message: ", err)
 		} else {
-			_, peerUsername, getting, err := readData(rw)
-			if err != nil && err == errors.New("stream reset") {
-				log.Error("stream reset: ", err)
-			}
-			if getting != handshake {
-				err = errors.New("not getting handshake")
-			}
-			if err != nil {
-				log.Error("error reading handshake response: ", err)
-			} else {
-				rfs.peers[peerUsername] = peer
-				rfs.peerNames = append(rfs.peerNames, peerUsername)
-				log.Infof("connected to peer: %s with username %s", peer, peerUsername)
-			}
+			log.Info("handshake message sent to peer: ", peerId)
 		}
 	}
-
-	log.Info("peer handshake failed")
 }
 
 func (rfs *RemoteFilesystem) handleStream(stream network.Stream) {
@@ -201,6 +197,11 @@ func (rfs *RemoteFilesystem) handleStream(stream network.Stream) {
 	switch getting {
 	case handshake:
 		log.Infof("got handshake from: %s", sender)
+		peerId := string(data)
+		peerId = strings.Replace(peerId, "\n", "", -1)
+		rfs.usernames = append(rfs.usernames, sender)
+		rfs.usernameToPeerId[sender] = peerId
+		log.Infof("connected to peer: %s with username %s", peerId, sender)
 	case remoteFilepath:
 		path := string(data)
 		log.Infof("user: %s is requesting %s", sender, path)
