@@ -63,6 +63,34 @@ func Test_GetFile(t *testing.T) {
 			Host:          1,
 			ExpectedBytes: getFile("test_data/expected/error.png"),
 		},
+		{
+			Name:          "nested element",
+			Username:      "host2",
+			Path:          "nested/file.js",
+			Host:          1,
+			ExpectedBytes: getFile("test_data/expected/file.js"),
+		},
+		{
+			Name:          "root element reversed",
+			Username:      "host1",
+			Path:          "success.png",
+			Host:          2,
+			ExpectedBytes: getFile("test_data/expected/success.png"),
+		},
+		{
+			Name:          "nested element reversed",
+			Username:      "host1",
+			Path:          "nested/file.css",
+			Host:          2,
+			ExpectedBytes: getFile("test_data/expected/file.css"),
+		},
+		{
+			Name:          "self read",
+			Username:      "",
+			Path:          "success.png",
+			Host:          1,
+			ExpectedBytes: getFile("test_data/expected/success.png"),
+		},
 	}
 
 	start := time.Now()
@@ -79,7 +107,7 @@ func Test_GetFile(t *testing.T) {
 		}
 		log.Info("u1 ", usernames1, "u2 ", usernames2)
 		time.Sleep(time.Second)
-		
+
 	}
 
 	// run tests
