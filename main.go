@@ -48,6 +48,7 @@ func main() { // nolint:funlen,gocyclo
 	}
 
 	// init http server
+	cfg.HTTPServer.Port = dcfg.LocalWebServerPort
 	httpSrv, err := serverHTTP.New(
 		cfg.HTTPServer,
 		app,
