@@ -344,11 +344,10 @@ func readData(rw *bufio.ReadWriter) ([]byte, string, string, error) {
 }
 
 // setUpGracefulHostStop sets up a graceful shutdown of the host
-func (rfs *RemoteFilesystem) setUpGracefulHostStop(ctx context.Context) error {
+func (rfs *RemoteFilesystem) setUpGracefulHostStop(ctx context.Context) {
 	go func(host libp2phost.Host) {
 		<-ctx.Done()
 		log.Error("Got Interrupt signal, stopping host")
 		host.Close()
 	}(rfs.host)
-	return nil
 }
