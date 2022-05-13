@@ -9,7 +9,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/mungujn/web-exp/system"
+	"github.com/mungujn/web-exp/app"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -21,7 +21,7 @@ func Test_GetFile(t *testing.T) {
 	protocolV := "0.1"
 
 	// prep host 1
-	dcfg1 := system.Config{
+	dcfg1 := app.Config{
 		Username:        "host1",
 		LocalRootFolder: "test_data/host_1",
 		LocalNodeHost:   "0.0.0.0",
@@ -38,7 +38,7 @@ func Test_GetFile(t *testing.T) {
 	defer h1Cancel()
 
 	// prep host 2
-	dcfg2 := system.Config{
+	dcfg2 := app.Config{
 		Username:        "host2",
 		LocalRootFolder: "test_data/host_2",
 		LocalNodeHost:   "0.0.0.0",

@@ -1,4 +1,4 @@
-package system
+package app
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 )
 
 // GetFile returns file content
-func (s *System) GetFile(ctx context.Context, path string) ([]byte, string, error) {
+func (s *App) GetFile(ctx context.Context, path string) ([]byte, string, error) {
 	log.Debug("GetFile: ", path)
 	var username string
 	var filename string
@@ -52,6 +52,6 @@ func (s *System) GetFile(ctx context.Context, path string) ([]byte, string, erro
 	return file, inferContentType(filename), nil
 }
 
-func (s *System) GetOnlineNodes() []string {
+func (s *App) GetOnlineNodes() []string {
 	return s.fileProvider.GetOnlineNodes()
 }

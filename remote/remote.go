@@ -19,7 +19,7 @@ import (
 	"crypto/rand"
 	"fmt"
 
-	"github.com/mungujn/web-exp/system"
+	"github.com/mungujn/web-exp/app"
 
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 
@@ -58,7 +58,7 @@ type RemoteFilesystem struct {
 }
 
 // New creates a new RemoteFilesystem host using libp2p
-func New(dcfg system.Config) *RemoteFilesystem {
+func New(dcfg app.Config) *RemoteFilesystem {
 	log.Debugf("setting up the remote node system using host %s and port %d", dcfg.LocalNodeHost, dcfg.LocalNodePort)
 	return &RemoteFilesystem{
 		iam:                 dcfg.Username,

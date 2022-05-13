@@ -13,7 +13,7 @@ import (
 	"github.com/mungujn/web-exp/config"
 	"github.com/mungujn/web-exp/remote"
 	serverHTTP "github.com/mungujn/web-exp/server"
-	"github.com/mungujn/web-exp/system"
+	"github.com/mungujn/web-exp/app"
 )
 
 // main is the entry point of the application
@@ -42,15 +42,15 @@ func main() { // nolint:funlen,gocyclo
 	}
 
 	// init distributed system
-	sys, err := system.New(ctx, dcfg, provider)
+	app, err := app.New(ctx, dcfg, provider)
 	if err != nil {
-		log.WithError(err).Fatal("system init error")
+		log.WithError(err).Fatal("app init error")
 	}
 
 	// init http server
 	httpSrv, err := serverHTTP.New(
 		cfg.HTTPServer,
-		sys,
+		app,
 	)
 	if err != nil {
 		log.WithError(err).Error("http server init error, http web server will not be available")

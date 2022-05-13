@@ -1,16 +1,16 @@
-package system
+package app
 
 import (
 	"fmt"
 	"strings"
 )
 
-func (s *System) renderedHomePage(onlineNodes []string) ([]byte, string, error) {
+func (s *App) renderedHomePage(onlineNodes []string) ([]byte, string, error) {
 	html := renderHeader() + s.renderOnlineNodes(onlineNodes) + renderFooter()
 	return []byte(html), htmlContent, nil
 }
 
-func (s *System) renderOnlineNodes(nodes []string) string {
+func (s *App) renderOnlineNodes(nodes []string) string {
 	nodesHtml := "<ul>"
 	rootHost := s.cfg.LocalNodeHost
 	if rootHost == "0.0.0.0" {

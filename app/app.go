@@ -1,4 +1,4 @@
-package system
+package app
 
 import (
 	"context"
@@ -26,14 +26,14 @@ type FileProvider interface {
 	GetOnlineNodes() []string
 }
 
-// System is the main implementation of the applications logic
-type System struct {
+// App is the main implementation of the applications logic
+type App struct {
 	cfg          Config
 	fileProvider FileProvider
 }
 
 // New returns a new instance of the system
-func New(ctx context.Context, cfg Config, fileProvider FileProvider) (*System, error) {
-	s := &System{cfg: cfg, fileProvider: fileProvider}
+func New(ctx context.Context, cfg Config, fileProvider FileProvider) (*App, error) {
+	s := &App{cfg: cfg, fileProvider: fileProvider}
 	return s, nil
 }

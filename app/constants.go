@@ -1,4 +1,4 @@
-package system
+package app
 
 const (
 	htmlContent      = "text/html"

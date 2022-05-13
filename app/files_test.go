@@ -1,4 +1,4 @@
-package system
+package app
 
 import (
 	"context"
@@ -11,12 +11,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getTestSystem(t *testing.T) (*System, context.Context) {
+func getTestApp(t *testing.T) (*App, context.Context) {
 	// prep test config
 	ctx := context.Background()
 	cfg := Config{
-		Username:        "me",
-		LocalRootFolder: "test_data/server_root",
+		Username:           "me",
+		LocalRootFolder:    "test_data/server_root",
+		LocalNodeHost:      "0.0.0.0",
+		LocalWebServerPort: 8080,
 	}
 
 	// prep test distributed services provider
@@ -32,7 +34,7 @@ func getTestSystem(t *testing.T) (*System, context.Context) {
 
 func Test_GetFile(t *testing.T) {
 	// prep
-	sys, ctx := getTestSystem(t)
+	app, ctx := getTestApp(t)
 
 	// prep test cases
 	cases := []struct {
@@ -89,7 +91,7 @@ func Test_GetFile(t *testing.T) {
 	for _, testCase := range cases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			log.Debug("testing file case: ", testCase.Path)
-			data, contentType, err := sys.GetFile(ctx, testCase.Path)
+			data, contentType, err := app.GetFile(ctx, testCase.Path)
 			// writeFile(testCase.Name, data)
 			assert.Nil(t, err)
 			assert.Equal(t, testCase.ExpectedContentType, contentType)
@@ -100,7 +102,7 @@ func Test_GetFile(t *testing.T) {
 
 func Test_GetFile_error(t *testing.T) {
 	// prep
-	sys, ctx := getTestSystem(t)
+	app, ctx := getTestApp(t)
 
 	cases := []struct {
 		Name                string
@@ -119,7 +121,7 @@ func Test_GetFile_error(t *testing.T) {
 	for _, testCase := range cases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			log.Debug("testing file case: ", testCase.Path)
-			data, contentType, err := sys.GetFile(ctx, testCase.Path)
+			data, contentType, err := app.GetFile(ctx, testCase.Path)
 			// writeFile(testCase.Name, data)
 			assert.Error(t, errors.New("open test_data/server_root/file-2.js: no such file or directory"), err)
 			assert.Equal(t, testCase.ExpectedContentType, contentType)
