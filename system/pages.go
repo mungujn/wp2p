@@ -12,13 +12,19 @@ func (s *System) renderedHomePage(onlineNodes []string) ([]byte, string, error) 
 
 func (s *System) renderOnlineNodes(nodes []string) string {
 	nodesHtml := "<ul>"
-	nodesHtml += fmt.Sprintf(`<li><strong><a href="http://localhost:%d/%s/index.html">%s</a></strong></li>`,
+	rootHost := s.cfg.LocalNodeHost
+	if rootHost == "0.0.0.0" {
+		rootHost = "localhost"
+	}
+	nodesHtml += fmt.Sprintf(`<li><strong><a href="http://%s:%d/%s/index.html">%s</a></strong></li>`,
+		rootHost,
 		s.cfg.LocalWebServerPort,
 		s.cfg.Username,
 		s.cfg.Username,
 	)
 	for _, node := range nodes {
-		nodesHtml += fmt.Sprintf(`<li><strong><a href="http://localhost:%d/%s/index.html">%s</a></strong></li>`,
+		nodesHtml += fmt.Sprintf(`<li><strong><a href="http://%s:%d/%s/index.html">%s</a></strong></li>`,
+			rootHost,
 			s.cfg.LocalWebServerPort,
 			node,
 			node,

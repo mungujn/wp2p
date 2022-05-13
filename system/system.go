@@ -16,6 +16,7 @@ type Config struct {
 	ProtocolVersion     string `mapstructure:"PROTOCOL_VERSION"  default:"0.1"`
 	RunGlobal           bool   `mapstructure:"RUN_GLOBAL"  default:"false"`
 	CustomBootstrapPeer string `mapstructure:"CUSTOM_BOOTSTRAP_PEER"  default:"/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ"`
+	Debug               bool   `mapstructure:"DEBUG"  default:"false"`
 }
 
 // FileProvider specifies the interface that file service providers must meet

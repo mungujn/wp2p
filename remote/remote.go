@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	mrand "math/rand"
+
 	libp2phost "github.com/libp2p/go-libp2p-core/host"
 
 	log "github.com/sirupsen/logrus"
@@ -52,6 +54,7 @@ type RemoteFilesystem struct {
 	usernames           []string
 	runGlobal           bool
 	customBootstrapPeer string
+	debug               bool
 }
 
 // New creates a new RemoteFilesystem host using libp2p
@@ -66,6 +69,7 @@ func New(dcfg system.Config) *RemoteFilesystem {
 		protocolId:          fmt.Sprintf("/%s/%s", dcfg.ProtocolId, dcfg.ProtocolVersion),
 		runGlobal:           dcfg.RunGlobal,
 		customBootstrapPeer: dcfg.CustomBootstrapPeer,
+		debug:               dcfg.Debug,
 		peerIds:             make(map[string]peer.AddrInfo),
 		usernameToPeerId:    make(map[string]string),
 		usernames:           make([]string, 0),
@@ -76,7 +80,14 @@ func New(dcfg system.Config) *RemoteFilesystem {
 func (rfs *RemoteFilesystem) StartHost(ctx context.Context) error {
 	log.Infof("will listen on: %s with port: %d\n", rfs.listenHost, rfs.listenPort)
 
-	r := rand.Reader
+	var r io.Reader
+
+	if rfs.debug {
+		log.Info("debug mode is on, will use port number as random seed data")
+		r = mrand.New(mrand.NewSource(int64(9223372036854775807 - rfs.listenPort)))
+	} else {
+		r = rand.Reader
+	}
 
 	// Creates a new RSA key pair for this host.
 	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
@@ -98,8 +109,10 @@ func (rfs *RemoteFilesystem) StartHost(ctx context.Context) error {
 	// libp2p.New constructs a new libp2p Host.
 	// Other options can be added here.
 	if rfs.runGlobal {
+		log.Info("running global node")
 		host, err = getGlobalHost(ctx, prvKey, sourceMultiAddr, idht)
 	} else {
+		log.Info("running local node")
 		host, err = libp2p.New(
 			libp2p.ListenAddrs(sourceMultiAddr),
 			libp2p.Identity(prvKey),
