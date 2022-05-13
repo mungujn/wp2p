@@ -78,6 +78,7 @@ This modules tests are at a relatively high level. Two full nodes are spun up an
 ## Notes
 
 - The bridge capability is as yet untested. For now, best to leave `RUN_GLOBAL` set to false.
+- The p2p system has not been subjected to sufficient chaos engineering in my opinion. This will come soon and is bound to unearth some bugs and areas needing improvement.
 
 ## Credit
 
