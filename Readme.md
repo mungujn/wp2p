@@ -34,27 +34,39 @@ This system has 3 main subsytems:
 
 ### Web Server
 
-This is used to serve the web pages. It is configured to run on localhost on the port specified in the environment configuration. It can serve web pages from the configured local directory but also from other peers on the network. The web server defines a `System` interface that specifies two main methods, one for retrieving a file and one for retrieving a list of online users. This subsytem is implemented in the `server` module.
+This serves up web pages. It is configured to run on `localhost` on the port specified in the environment configuration. It can serve web pages from the configured `LOCAL_ROOT_FOLDER` and from other peers on the p2p network. 
+
+The web server defines a `System` interface that specifies two main methods; one for retrieving a file and one for retrieving a list of online users. 
+
+This subsytem is implemented in the `server` module.
 
 ### Application
 
-This implements the systems main logic as defined by the `System` interface. The web server sends over the full web request `GET` path to the file subsystem. The main application logic here is seperation of the username from the actual file path being requested. The application then makes a request for the specified file (from the appropriate user) and returns the file contents. The application defines a `FileProvider` interface that specifies three main methods, one for setting up the provider, one for retrieving a file from a specific user and one for retrieving a list of online users. This subsytem is implemented in the `app` module.
+This implements the systems main logic as defined by the `System` interface. The web server sends over the full web request `GET` path to the file subsystem. The main application logic here is seperation of the username from the actual file path being requested. The application then makes a request for the specified file (from the appropriate user) and returns the file contents. 
+
+The application defines a `FileProvider` interface that specifies three main methods; one for setting up the provider, one for retrieving a file from a specific user and one for retrieving a list of online users. 
+
+This subsytem is implemented in the `app` module.
 
 ### Local Files
 
-This is a local files implementation of the `FileProvider` interface specified by the application subsystem. It is primarily used in the unit tests for the `app` module to test application logic without needing a full p2p network. It is implemented in the `local` module.
+This is a local files implementation of the `FileProvider` interface specified by the application subsystem. It is primarily used in the unit tests for the `app` module to test application logic without needing a full p2p network. 
+
+It is implemented in the `local` module.
 
 ### p2p network
 
-This is arguably the heart of the application. It is the primary p2p network implementation, implemented in the `remote` module. It is used to connect to other peers on the network and retrieve files from these peers. It's also the primary utilizer of most of the environment variables specified above. The module implements the `FileProvider` interface defined by the application subsytem (located in the `app` module) and provides p2p-networking integrated implementations of the 3 methods that the interface specifies, `StartHost`, `GetFile` and `GetOnlineNodes`.
+This is arguably the heart of the application. It is the primary p2p network implementation, implemented in the `remote` module. It is used to connect to other peers on the network and retrieve files from these peers. It's also the primary utilizer of most of the environment variables specified above. 
 
-`StartHost` creates a `libp2p` node/host and sets up a handler for incoming connections. It also initializes `mDNS` which is used to discover other peers on the network.
+The module implements the `FileProvider` interface defined by the application subsytem (located in the `app` module) and provides p2p-networking integrated implementations of the 3 methods that the interface specifies, `StartHost`, `GetFile` and `GetOnlineNodes`.
 
-`GetFile` is used to retrieve files from other peers on the network.
+- `StartHost` creates a `libp2p` node/host and sets up a handler for incoming connections. It also initializes `mDNS` which is used to discover other peers on the network.
 
-`GetOnlineNodes` returns a list of online users in the network. Nodes in the network are identified using ID's that are not exactly human readable. These ID's are mapped to usernames in a custom handshake protocol that is implemented in this `remote` module.
+- `GetFile` is used to retrieve files from other peers on the network.
 
-The modules tests are at a relatively high level. Two full nodes are spun up and file exchange between them is tested.
+- `GetOnlineNodes` returns a list of online users in the network. Nodes in the network are identified using ID's that are not exactly human readable. These ID's are mapped to usernames in a custom handshake protocol that is implemented in this `remote` module.
+
+This modules tests are at a relatively high level. Two full nodes are spun up and file exchange between them is tested.
 
 ## Running
 
