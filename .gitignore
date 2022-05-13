@@ -15,6 +15,7 @@ reports
 # Builds
 build/*
 __debug_bin
+locals
 
 # Binaries
 *.exe
